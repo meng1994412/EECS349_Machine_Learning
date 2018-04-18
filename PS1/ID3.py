@@ -4,8 +4,29 @@ from collections import Counter
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+import sys
+sys.setrecursionlimit(4000)
 
+def preprocess(examples):
+    '''
+    This function returns examples without having any missing values ('?')
+    Choose the most common value under the attribute
 
+    Input: examples
+    Output: examples
+    '''
+    attributes = getAttributes(examples)
+    for attribute in attributes:
+        valueList = []
+        for example in examples:
+            valueList.append(example[attribute])
+        value = Counter(valueList).most_common(1)[0][0]
+        for example in examples:
+            if example[attribute] == '?':
+                example[attribute] = value
+    #print(examples[0])
+    return examples
 
 def getBestAttribute(examples):
     '''
@@ -60,7 +81,7 @@ def getBestAttribute(examples):
 
     #bestAttribute = attributes[infoGain.index(min(infoGain))]
     bestAttribute = attributes[np.argmin(infoGain)]
-    print(bestAttribute)
+    #print(bestAttribute)
     #print(attributes)
     return bestAttribute
 
@@ -134,25 +155,29 @@ def getEntropy(prob):
     '''
     return ((-1) * prob * math.log(prob, 2))  # H(Y) = - P(Y = k) log P(Y = k)
 
-def getMode(classification):
+def getMode(examples):
     '''
     This function returns the most common classification label
 
-    Input: classification of examples
     Output: classification label
     '''
     classification = []
     for example in examples:
         classification.append(example['Class'])
     mode = Counter(classification).most_common(1)[0][0]
+    #print(classification)
     #print(mode)
     return mode
 
+'''
+examples = preprocess(examples)
+random.shuffle(examples)
+split1, split2 = int(0.6 * len(examples)), int(0.8 * len(examples))
+trainingList = examples[:split1]
+validationList = examples[split1 : split2]
+testingList = examples[split2:]
+'''
 
-getBestAttribute(examples)
-classification = getClassification(examples)
-# getMode(classification)
-# ID3(examples, getMode(classification))
 
 def ID3(examples, default):
     '''
@@ -161,43 +186,77 @@ def ID3(examples, default):
     and the target class variable is a special attribute with the name "Class".
     Any missing attributes are denoted with a value of "?"
     '''
+
+    tree = Node()
     if len(examples) == 0:
-        return default
+        tree.label = default
     elif (len(getAttributes(examples)) == 0 or len(getClassification(examples)) == 1):
-        return default
+        tree.label = getMode(examples)
     else:
         bestAttribute = getBestAttribute(examples)
-        tree = {bestAttribute: {}}
+        tree.branch = bestAttribute
+        #tree = {bestAttribute: {}}
         values = getValues(examples, bestAttribute)
         for eachVal in values:
-            subExample = []
+            subExamples = []
             for example in examples:
                 if example[bestAttribute] == eachVal:
-                    subExample.append(example)
-            subtree = ID3(subExample, default)
-            tree[bestAttribute][eachVal] = subtree
+                    subExamples.append(example)
+            subtree = ID3(subExamples, getMode(subExamples))
+            tree.children[eachVal] = subtree
     return tree
 
-# tree = ID3(examples, getMode(classification))
-# print(tree)
+#tree = ID3(trainingList, '')
 
 
 def prune(node, examples):
-  '''
-  Takes in a trained tree and a validation set of examples.  Prunes nodes in order
-  to improve accuracy on the validation data; the precise pruning strategy is up to you.
-  '''
+    '''
+    Takes in a trained tree and a validation set of examples.  Prunes nodes in order
+    to improve accuracy on the validation data; the precise pruning strategy is up to you.
+    '''
 
 
-def test(node, examples):
-  '''
-  Takes in a trained tree and a test set of examples.  Returns the accuracy (fraction
-  of examples the tree classifies correctly).
-  '''
+def test(tree, examples):
+    '''
+    Takes in a trained tree and a test set of examples.  Returns the accuracy (fraction
+    of examples the tree classifies correctly).
+    '''
+    totalNum = len(examples)
+    # print(totalNum)
+    correctNum = 0
+    for example in examples:
+        correctClassification = example['Class']
+        if evaluate(tree, example) == correctClassification:
+            correctNum = correctNum + 1
+    print(correctNum / float(totalNum))
+    return correctNum / float(totalNum)
 
 
-def evaluate(node, example):
-  '''
-  Takes in a tree and one example.  Returns the Class value that the tree
-  assigns to the example.
-  '''
+def evaluate(tree, example):
+    '''
+    Takes in a tree and one example.  Returns the Class value that the tree
+    assigns to the example.
+    '''
+    #print(tree.label)
+    while (tree.label == None):
+        value = example[tree.branch]
+        tree = tree.children[value]
+
+    return tree.label
+
+#accuracy = test(tree, testingList)
+#print(accuracy)
+
+def main():
+    examples = preprocess(examples)
+    random.shuffle(examples)
+    split1, split2 = int(0.6 * len(examples)), int(0.8 * len(examples))
+    trainingList = examples[:split1]
+    validationList = examples[split1: split2]
+    testingList = examples[split2:]
+    tree = ID3(trainingList, '')
+    test(tree, testingList)
+    #print(acc)
+    print('Hello World')
+
+if __name__ == '__main': main()
