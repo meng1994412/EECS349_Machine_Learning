@@ -8,3 +8,5 @@ class Node:
         self.label = None   # leaf node
         self.branch = None  # branch node
         self.children = {}
+        self.parent = None  # decide which the node is parent
+        self.mode = None    #
