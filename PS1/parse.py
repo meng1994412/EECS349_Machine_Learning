@@ -20,7 +20,7 @@ def parse(filename):
 
     return out
 
-examples = parse(data_file)
+data = parse(data_file)
 #print(type(data))
 #print(len(data[0]))
 #print(data[0])
