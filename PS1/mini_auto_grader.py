@@ -41,6 +41,8 @@ def mini_grader():
     tree = ID3.ID3(data, 0)
     if tree != None:
       ans = ID3.evaluate(tree, dict(a=1, b=0))
+      #print (ans)
+      #print (tree.children)
       if ans != 2:
         print "ID3 test 3-1 failed."
       else:
